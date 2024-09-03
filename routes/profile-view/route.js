@@ -27,7 +27,7 @@ router.post("/", verifyUser, async (req, res) => {
   const { skills } = req.body;
 
   try {
-    const userUpdate = await UserModel.findByIdAndUpdate(
+    const userUpdate = await UserModel.findOneAndUpdate(
       { _id: userId },
       { $push: { Skills: skills } }
     );
@@ -43,6 +43,35 @@ router.post("/", verifyUser, async (req, res) => {
       throw new Error("Uesr data unavailabe / authentication failure");
     }
   } catch (err) {
+    console.log(err);
+
+    res.sendStatus(400);
+  }
+});
+
+router.delete("/", verifyUser, async (req, res) => {
+  const userId = res.user._id;
+  const { skill } = req.body;
+
+  try {
+    const userUpdate = await UserModel.findOneAndUpdate(
+      { _id: userId },
+      { $pull: { Skills: skill } }
+    );
+
+    if (userUpdate) {
+      res
+        .json({
+          header: "User profile details updated",
+          body: "successfully deleted user skill",
+        })
+        .status(200);
+    } else {
+      throw new Error("Uesr data unavailabe / authentication failure");
+    }
+  } catch (err) {
+    console.log(err);
+
     res.sendStatus(400);
   }
 });

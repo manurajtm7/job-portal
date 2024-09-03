@@ -5,11 +5,10 @@ const UserModel = require("../../schema/user-registration-schema/UserRegistratio
 
 router.get("/", verifyUser, async (_, res) => {
   try {
-    const users = await UserModel.find({}).select({
+    const users = await UserModel.find({}).populate("personalDetails").select({
       hashedPssword: 0,
-      personalDetails: 0,
     });
-
+   
     res.json({ header: "User lists", body: users });
   } catch (err) {
     res.sendStatus(400);

@@ -1,11 +1,15 @@
+const http = require("http");
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const http = require("http");
-const { default: mongoose } = require("mongoose");
+const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
 const { Server } = require("socket.io");
-
 require("dotenv").config();
+const passport = require("passport");
+const session = require("express-session");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+
 const connect = require("./controllers/database/dbconnection");
 
 //import routes here
@@ -22,19 +26,39 @@ const EmployerProfileVieRoute = require("./routes/employer-profile-view/route");
 const ChangeStatusRoute = require("./routes/status-change/route");
 const UsersListRoute = require("./routes/users-list/route");
 const ProfileViewRoute = require("./routes/profile-view/route");
+const UsersProfileViewRoute = require("./routes/user-profile-view/route");
+const ChatRequestRoute = require("./routes/chat-request/route");
+const authRoutes = require("./routes/authentication/Auth/Auth");
+const profileRoutes = require("./routes/authentication/Auth/Profile");
+const jobPostListRoute = require("./routes/posted-jobs-list/route");
+
+const handleGoogleAuthUsere = require("./controllers/user-google-auth/UserGoogleAuth");
 
 const app = express();
 const server = http.createServer(app);
 
 app.use(express.json());
+app.use(cookieParser());
+
 app.use(
   cors({
-    origin: "http://localhost:5173", // Allow only this origin
-    credentials: true, // Allow cookies to be sent
+    origin: ["http://localhost:5173", "http://localhost:5174"],
+    credentials: true,
     optionsSuccessStatus: 200,
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "DELETE", "PATCH", "PUT"],
   })
 );
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 const io = new Server(server, {
   cors: {
@@ -43,11 +67,52 @@ const io = new Server(server, {
   },
 });
 
-app.use(cookieParser());
+//* multer config start
+const upload = multer({ dest: "./uploads" });
+app.use(upload.any());
+//* multer config ends
+
+//* cloudinary configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
+});
+//* cloudinary configuration ends
 
 //?data base connection controller method
 connect();
 //?data base connection controller method end
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        const user = await handleGoogleAuthUsere(profile);
+
+        return done(null, user);
+      } catch (Err) {
+        console.log(Err);
+        return done(Err, null);
+      }
+    }
+  )
+);
+
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((obj, done) => {
+  done(null, obj);
+});
+
+//google authentication end
 
 //? routes expressions here
 app.use("/register", RegistrationRoute);
@@ -55,8 +120,10 @@ app.use("/login", LoginRoute);
 
 app.use("/jobs-list", jobsListRoute);
 app.use("/post-job", JobPostRoute);
+app.use("/", jobPostListRoute);
 app.use("/personal-profile-form", PersonalDetailsRoute);
 app.use("/profile-view", ProfileViewRoute);
+app.use("/user-profile-view", UsersProfileViewRoute);
 
 app.use("/employer-details-form", EmployerDetailsRoute);
 app.use("/employer-all-details", EmployerAllDetailsRoute);
@@ -67,8 +134,14 @@ app.use("/job-application-send", JobApplicationRoute);
 app.use("/job-application-list", JobAlertsRoute);
 
 app.use("/users-list", UsersListRoute);
+app.use("/chat-request", ChatRequestRoute);
+
+app.use("/auth", authRoutes);
+app.use("/profile", profileRoutes);
 
 //? routes expressions here
+
+//google authentication
 
 //additional route handlers
 app.get("/", (_, res) => {
@@ -100,5 +173,3 @@ io.on("connection", (socket) => {
 //? server port configurations
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log("server listening on port " + PORT));
-
-// module.exports = io;

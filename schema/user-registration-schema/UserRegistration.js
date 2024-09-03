@@ -5,6 +5,14 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   hashedPssword: { type: String, required: true },
   createdAt: { type: Date, default: Date.now(), required: true },
+
+  googleId: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  
+
   personalDetails: {
     type: mongoose.Schema.ObjectId,
     default: null,
@@ -15,11 +23,18 @@ const UserSchema = new mongoose.Schema({
     default: null,
     ref: "Empolyer-Schema",
   },
-  Skills: [
+  verified: {
+    type: mongoose.Schema.ObjectId,
+    ref: "requests",
+    required: false,
+  },
+  Skills: { type: [String] },
+  isRequestAvail: { type: Boolean, default: false },
+  ChatRequests: [
     {
-      type: String,
+      type: mongoose.Schema.ObjectId,
       default: null,
-      unique: true,
+      ref: "chat-request",
     },
   ],
 });

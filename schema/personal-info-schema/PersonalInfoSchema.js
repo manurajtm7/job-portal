@@ -7,16 +7,7 @@ const profileSchema = new mongoose.Schema({
   interests: String,
   habits: String,
   qualification: String,
-  //   profilePicture: {
-  //     type: String,
-  //     required: false,
-  //   },
-  //   images: [
-  //     {
-  //       type: String,
-  //       required: false,
-  //     },
-  //   ],
+  profilePicture: String,
 });
 
 const Profile = mongoose.model("Profile", profileSchema);

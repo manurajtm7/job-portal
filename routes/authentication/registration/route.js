@@ -10,9 +10,16 @@ const UserModel = require("../../../schema/user-registration-schema/UserRegistra
 
 router.post("/", async (req, res) => {
   const { name, email, password } = req.body;
+  console.log("register");
+
   try {
     const hashedPssword = await hashPssword(password);
-    const response = await UserModel.create({ name, email, hashedPssword });
+    const response = await UserModel.create({
+      name,
+      email,
+      hashedPssword,
+    });
+
     if (response) {
       const { _id, email, hashedPssword } = response;
       const token = jwtSign({ _id, email, hashedPssword });
@@ -30,10 +37,6 @@ router.post("/", async (req, res) => {
   } catch (err) {
     console.log(err);
     res.sendStatus(400);
-    // .json({
-    //   header: "Internal server error",
-    //   body: "cannot create user - network error / internal error ",
-    // })
   }
 });
 

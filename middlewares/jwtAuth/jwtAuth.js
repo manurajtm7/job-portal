@@ -2,6 +2,8 @@ const jwt = require("jsonwebtoken");
 const jwtKey = process.env.JWT_KEY;
 
 const jwtSign = ({ _id, email, hashedPssword }) => {
+  if (!_id || !email || !hashedPssword) return;
+
   return jwt.sign({ _id, email, hashedPssword }, jwtKey);
 };
 

@@ -7,10 +7,30 @@ const jobSchema = require("../../schema/Job-schema/JobSchema"); //? schema impor
 router.get("/", verifyUser, async (req, res) => {
   try {
     const response = await jobSchema
-      .find({})
-      .sort({ createdAt: -1 })
-      .populate("employerDetails");
-
+      // .find({})
+      // .populate("employerDetails")
+      // .select({ "employerDetails.hashedPssword": 0 });
+      .aggregate([
+        { $match: {} },
+        {
+          $lookup: {
+            from: "user-datas",
+            localField: "employerDetails",
+            foreignField: "_id",
+            as: "employerDetails_merge",
+          },
+        },
+        {
+          $unwind: "$employerDetails_merge",
+        },
+        {
+          $project: {
+            "employerDetails_merge.hashedPssword": 0,
+            hashedPssword: 0,
+          },
+        },
+      ])
+      .sort({ createdAt: -1 });
     if (response)
       res
         .json({
