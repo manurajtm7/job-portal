@@ -8,9 +8,10 @@ const messageSchema = new mongoose.Schema({
     required: true,
   },
   message: { type: String },
+  room: { type: String },
   time: { type: Date, default: Date.now() },
 });
 
-const messageModel = mongoose.model("messages", messageSchema);
+const messageModel = mongoose.model("user-chat", messageSchema);
 
 module.exports = messageModel;

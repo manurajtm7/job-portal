@@ -33,6 +33,8 @@ const profileRoutes = require("./routes/authentication/Auth/Profile");
 const jobPostListRoute = require("./routes/posted-jobs-list/route");
 
 const handleGoogleAuthUsere = require("./controllers/user-google-auth/UserGoogleAuth");
+const messageModel = require("./schema/message-schema/messageSchema");
+const { default: mongoose } = require("mongoose");
 
 const app = express();
 const server = http.createServer(app);
@@ -153,12 +155,28 @@ app.get("/", (_, res) => {
 let onlineUsers = [];
 
 io.on("connection", (socket) => {
-  socket.on("join_chat", (data) => {
+  socket.on("join_chat", async (data) => {
     const roomId = data.room;
     socket.join(roomId);
+    try {
+      const messages = await messageModel.find({
+        room: roomId,
+      });
+      io.to(roomId).emit("all_chat_messages", messages);
+    } catch (Err) {
+      console.log(Err);
+    }
   });
 
-  socket.on("message_send", (data) => {
+  socket.on("message_send", async (data) => {
+    console.log(data);
+    const messageResponse = await messageModel.create({
+      sender: new mongoose.Types.ObjectId(data?.sender),
+      receiver: new mongoose.Types.ObjectId(data?.receiver),
+      message: data?.message,
+      room: data?.room,
+    });
+
     socket.broadcast.to(data.room).emit("message", data);
   });
 
